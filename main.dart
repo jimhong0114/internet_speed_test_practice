@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_internet_speed_test/flutter_internet_speed_test.dart';
-import 'package:flutter_internet_speed_test/src/test_result.dart';
+import 'package:flutter_internet_speed_test/flutter_internet_speed_test.dart';//測試網速必要程式檔
+import 'package:flutter_internet_speed_test/src/test_result.dart';//測試網速必要程式檔
 
 void main() {
   runApp(const MyApp());
@@ -25,41 +25,41 @@ class SpeedTestPage extends StatefulWidget {
 }
 
 class _SpeedTestPageState extends State<SpeedTestPage> {
-  final FlutterInternetSpeedTest _internetSpeedTest = FlutterInternetSpeedTest();
+  final FlutterInternetSpeedTest _internetSpeedTest = FlutterInternetSpeedTest();//定義測網速的核心物件
 
-  double _downloadRate = 0;
-  String _unit = '';
-  bool _isTesting = false;
+  double _downloadRate = 0;//初始設置下載速度為0
+  String _unit = '';//設置目前速度單位為空（Mbps、Kbps 等）
+  bool _isTesting = false;//初始設置目前沒有在測試網速
 
-  void _startTest() {
-    setState(() {
-      _isTesting = true;
-      _downloadRate = 0;
-      _unit = '';
+  void _startTest() {   //測試網速的函式
+    setState(() {  //重設畫面上的狀態
+      _isTesting = true;//設置目前有在測試網速
+      _downloadRate = 0;//重置目前下載速度為0
+      _unit = '';//設置目前速度單位為空（Mbps、Kbps 等）
     });
 
-    _internetSpeedTest.startTesting(
-      onProgress: (double percent, TestResult data) {
+    _internetSpeedTest.startTesting( //重設畫面狀態以後的測速過程與結束過程
+      onProgress: (double percent, TestResult data) { //測試進行中會不斷回傳目前下載的百分比與即時測速資料
         setState(() {
           _downloadRate = data.transferRate;
           _unit = data.unit.name;
         });
       },
-      onCompleted: (TestResult download, TestResult upload) {
-        setState(() => _isTesting = false);
+      onCompleted: (TestResult download, TestResult upload) {    //測試結束，會傳回下載與上傳的測試結果
+        setState(() => _isTesting = false);//因為已測試完畢，所以設置目前沒在測試網速
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '測試完成：下載 ${download.transferRate.toStringAsFixed(2)} ${download.unit.name}，'
-                  '上傳 ${upload.transferRate.toStringAsFixed(2)} ${upload.unit.name}',
+              '測試完成：下載 ${download.transferRate.toStringAsFixed(2)} ${download.unit.name}，'//顯示下載速度與單位
+                  '上傳 ${upload.transferRate.toStringAsFixed(2)} ${upload.unit.name}',//顯示上傳速度與單位
             ),
           ),
         );
       },
-      onError: (String errorMessage, String speedTestError) {
-        setState(() => _isTesting = false);
+      onError: (String errorMessage, String speedTestError) {         //測試失敗時會呼叫這個函數
+        setState(() => _isTesting = false);//因為測試過程發生錯誤，所以測試中斷，設置目前沒在測試網速
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('測試失敗：$errorMessage')),
+          SnackBar(content: Text('測試失敗：$errorMessage')),//顯示錯誤訊息
         );
       },
     );
@@ -76,16 +76,12 @@ class _SpeedTestPageState extends State<SpeedTestPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                _isTesting
-                    ? '測試中...'
-                    : _downloadRate > 0
-                    ? '下載速度：${_downloadRate.toStringAsFixed(2)} $_unit'
-                    : '尚未開始測試',
+                _isTesting ? '測試中...': (_downloadRate > 0 ? '下載速度：${_downloadRate.toStringAsFixed(2)} $_unit': '尚未開始測試'),//如果_isTesting是true，則顯示'測試中'；如果_isTesting是false而且_downloadRate大於0，則顯示網速測試結果；如果如果_isTesting是false而且_downloadRate等於0，則顯示'尚未開始測試'
                 style: const TextStyle(fontSize: 24),
               ),
               const SizedBox(height: 30),
               ElevatedButton.icon(
-                onPressed: _isTesting ? null : _startTest,
+                onPressed: _isTesting ? null : _startTest,//按下按鈕後，如果_isTesting是true，則不做任何事，如果是false，則執行_startTest
                 icon: const Icon(Icons.network_check),
                 label: const Text('開始測試'),
               ),
