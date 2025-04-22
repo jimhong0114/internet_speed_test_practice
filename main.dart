@@ -28,25 +28,36 @@ class _SpeedTestPageState extends State<SpeedTestPage> {
   final FlutterInternetSpeedTest _internetSpeedTest = FlutterInternetSpeedTest();//定義測網速的核心物件
 
   double _downloadRate = 0;//初始設置下載速度為0
+  double _uploadRate = 0;//初始設置上傳速度為0
   String _unit = '';//設置目前速度單位為空（Mbps、Kbps 等）
   bool _isTesting = false;//初始設置目前沒有在測試網速
 
-  void _startTest() {   //測試網速的函式
-    setState(() {  //重設畫面上的狀態
+  void _startTest() {//測試網速的函式
+    setState(() { //重設畫面上的狀態
       _isTesting = true;//設置目前有在測試網速
       _downloadRate = 0;//重置目前下載速度為0
+      _uploadRate = 0;//重置目前上傳速度為0
       _unit = '';//設置目前速度單位為空（Mbps、Kbps 等）
     });
 
-    _internetSpeedTest.startTesting( //重設畫面狀態以後的測速過程與結束過程
+    _internetSpeedTest.startTesting(   //重設畫面狀態以後的測速過程與結束過程
       onProgress: (double percent, TestResult data) { //測試進行中會不斷回傳目前下載的百分比與即時測速資料
         setState(() {
-          _downloadRate = data.transferRate;
+          if (data.type == TestType.download) {
+            _downloadRate = data.transferRate;
+          } else if (data.type == TestType.upload) {
+            _uploadRate = data.transferRate;
+          }
           _unit = data.unit.name;
         });
       },
-      onCompleted: (TestResult download, TestResult upload) {    //測試結束，會傳回下載與上傳的測試結果
-        setState(() => _isTesting = false);//因為已測試完畢，所以設置目前沒在測試網速
+      onCompleted: (TestResult download, TestResult upload) {//測試結束，會傳回下載與上傳的測試結果
+        setState(() {
+          _isTesting = false;//因為已測試完畢，所以設置目前沒在測試網速
+          _downloadRate = download.transferRate;//將這函式的下載速度偵測結果同步到函式外的下載速度值
+          _uploadRate = upload.transferRate;//將這函式的上傳速度偵測結果同步到函式外的上傳速度值
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -56,7 +67,7 @@ class _SpeedTestPageState extends State<SpeedTestPage> {
           ),
         );
       },
-      onError: (String errorMessage, String speedTestError) {         //測試失敗時會呼叫這個函數
+      onError: (String errorMessage, String speedTestError) {    //測試失敗時會呼叫這個函數
         setState(() => _isTesting = false);//因為測試過程發生錯誤，所以測試中斷，設置目前沒在測試網速
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('測試失敗：$errorMessage')),//顯示錯誤訊息
@@ -76,8 +87,10 @@ class _SpeedTestPageState extends State<SpeedTestPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                _isTesting ? '測試中...': (_downloadRate > 0 ? '下載速度：${_downloadRate.toStringAsFixed(2)} $_unit': '尚未開始測試'),//如果_isTesting是true，則顯示'測試中'；如果_isTesting是false而且_downloadRate大於0，則顯示網速測試結果；如果如果_isTesting是false而且_downloadRate等於0，則顯示'尚未開始測試'
+                _isTesting? '測試中...': ((_downloadRate > 0 && _uploadRate > 0)? '下載速度：${_downloadRate.toStringAsFixed(2)} $_unit\n上傳速度：${_uploadRate.toStringAsFixed(2)} $_unit': '尚未開始測試'),
+                //如果_isTesting是true，則顯示'測試中'；如果_isTesting是false而且_downloadRate和 _uploadRate都大於0，則顯示網速測試結果；如果上述兩種結果都不符合，則顯示'尚未開始測試'
                 style: const TextStyle(fontSize: 24),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
               ElevatedButton.icon(
